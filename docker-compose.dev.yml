@@ -1,0 +1,9 @@
+services:
+  mongo:
+    ports:
+      - "27017:27017"
+
+  backend:
+    ports:
+      - "5000:5000"
+
