@@ -9,6 +9,8 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import roomRoutes from './routes/roomRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -51,6 +53,8 @@ app.use('/api', (_req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: `Route not found: ${req.originalUrl}` });

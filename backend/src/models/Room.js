@@ -2,9 +2,13 @@ import mongoose from 'mongoose';
 
 const roomSchema = new mongoose.Schema(
   {
-    name: {
+    roomNumber: {
       type: String,
       required: true,
+      trim: true
+    },
+    name: {
+      type: String,
       trim: true
     },
     type: {
@@ -17,38 +21,17 @@ const roomSchema = new mongoose.Schema(
       required: true,
       min: 0
     },
-    rating: {
-      type: Number,
-      default: 5,
-      min: 0,
-      max: 5
-    },
     description: {
       type: String,
       default: ''
     },
     status: {
       type: String,
-      enum: ['available', 'maintenance'],
+      enum: ['available', 'occupied', 'booked', 'maintenance'],
       default: 'available'
     },
     images: {
-      type: [
-        {
-          url: {
-            type: String,
-            required: true
-          },
-          filename: {
-            type: String,
-            required: true
-          },
-          originalName: {
-            type: String,
-            default: ''
-          }
-        }
-      ],
+      type: [String],
       default: []
     }
   },

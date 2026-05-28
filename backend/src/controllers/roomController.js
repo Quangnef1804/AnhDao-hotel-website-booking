@@ -2,19 +2,23 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import Room from '../models/Room.js';
+import Review from '../models/Review.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadRoot = path.resolve(__dirname, '../../uploads/rooms');
 
 const roomImagesFromFiles = (files = []) =>
-  files.map((file) => ({
-    url: `/uploads/rooms/${file.filename}`,
-    filename: file.filename,
-    originalName: file.originalname
-  }));
+  files.map((file) => `/uploads/rooms/${file.filename}`);
 
 const deleteRoomImageFiles = async (rooms) => {
-  const filenames = rooms.flatMap((room) => room.images?.map((image) => image.filename) || []);
+  const filenames = rooms.flatMap((room) =>
+    (room.images || [])
+      .map((image) => {
+        if (typeof image === 'string') return path.basename(image);
+        return image?.filename;
+      })
+      .filter(Boolean)
+  );
 
   await Promise.allSettled(
     filenames.map((filename) => fs.unlink(path.join(uploadRoot, filename)))
@@ -22,18 +26,47 @@ const deleteRoomImageFiles = async (rooms) => {
 };
 
 const roomPayload = (body, files = []) => {
-  const payload = {
-    name: body.name,
-    type: body.type,
-    description: body.description,
-    status: body.status
-  };
+  const payload = {};
 
+  const roomNumber = body.roomNumber || body.name;
+  if (roomNumber !== undefined) {
+    payload.roomNumber = roomNumber;
+    payload.name = roomNumber;
+  }
+  if (body.type !== undefined) payload.type = body.type;
+  if (body.description !== undefined) payload.description = body.description;
+  if (body.status !== undefined) payload.status = body.status;
   if (body.price !== undefined) payload.price = Number(body.price);
-  if (body.rating !== undefined) payload.rating = Number(body.rating);
   if (files.length) payload.images = roomImagesFromFiles(files);
 
   return payload;
+};
+
+const attachReviewStats = async (rooms) => {
+  const plainRooms = rooms.map((room) => room.toObject());
+  const stats = await Review.aggregate([
+    { $match: { roomId: { $in: rooms.map((room) => room._id) } } },
+    {
+      $group: {
+        _id: '$roomId',
+        averageRating: { $avg: '$rating' },
+        reviewCount: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const statsByRoom = new Map(stats.map((item) => [String(item._id), item]));
+
+  return plainRooms.map((room) => {
+    const roomStats = statsByRoom.get(String(room._id));
+    return {
+      ...room,
+      roomNumber: room.roomNumber || room.name,
+      name: room.roomNumber || room.name,
+      averageRating: roomStats ? Number(roomStats.averageRating.toFixed(1)) : 0,
+      reviewCount: roomStats?.reviewCount || 0
+    };
+  });
 };
 
 export const getRooms = async (req, res, next) => {
@@ -42,8 +75,8 @@ export const getRooms = async (req, res, next) => {
     if (req.query.status) filter.status = req.query.status;
     if (req.query.type) filter.type = req.query.type;
 
-    const rooms = await Room.find(filter).sort({ createdAt: -1 });
-    res.json({ rooms });
+    const rooms = await Room.find(filter).sort({ roomNumber: 1, createdAt: -1 });
+    res.json({ rooms: await attachReviewStats(rooms) });
   } catch (error) {
     next(error);
   }
@@ -56,7 +89,8 @@ export const getRoom = async (req, res, next) => {
       return res.status(404).json({ message: 'Room not found' });
     }
 
-    res.json({ room });
+    const [roomWithStats] = await attachReviewStats([room]);
+    res.json({ room: roomWithStats });
   } catch (error) {
     next(error);
   }
@@ -123,6 +157,28 @@ export const deleteRooms = async (req, res, next) => {
     await deleteRoomImageFiles(rooms);
 
     res.json({ message: 'Rooms deleted', deletedCount: result.deletedCount });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateRoomsStatus = async (req, res, next) => {
+  try {
+    const ids = Array.isArray(req.body.ids) ? req.body.ids : [];
+    const { status } = req.body;
+    const allowedStatuses = ['available', 'occupied', 'booked', 'maintenance'];
+
+    if (!ids.length) {
+      return res.status(400).json({ message: 'Room ids are required' });
+    }
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid room status' });
+    }
+
+    const result = await Room.updateMany({ _id: { $in: ids } }, { status }, { runValidators: true });
+
+    res.json({ message: 'Rooms updated', modifiedCount: result.modifiedCount });
   } catch (error) {
     next(error);
   }

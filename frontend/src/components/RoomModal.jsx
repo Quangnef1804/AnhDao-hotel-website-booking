@@ -25,7 +25,7 @@ const RoomModal = ({ room, onClose, onBooked }) => {
   if (!room) return null;
 
   const images = room.images || [];
-  const selectedImage = images[activeImage]?.url;
+  const selectedImage = images[activeImage];
   const canNavigateImages = images.length > 1;
 
   const goImage = (step) => {
@@ -62,7 +62,7 @@ const RoomModal = ({ room, onClose, onBooked }) => {
       <section className="w-full max-w-xl rounded-lg bg-white shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
           <div>
-            <h2 className="text-2xl font-semibold text-black">{room.name}</h2>
+            <h2 className="text-2xl font-semibold text-black">{room.roomNumber}</h2>
             <p className="mt-1 text-sm text-slate-600">{t(`common.${room.type}`)}</p>
           </div>
           <button
@@ -80,7 +80,7 @@ const RoomModal = ({ room, onClose, onBooked }) => {
             <div className="relative aspect-video bg-anhdao-blue">
               {selectedImage ? (
                 <img
-                  alt={room.name}
+                  alt={room.roomNumber}
                   className="h-full w-full object-cover"
                   src={mediaUrl(selectedImage)}
                 />
@@ -117,14 +117,14 @@ const RoomModal = ({ room, onClose, onBooked }) => {
                     className={`h-16 w-24 flex-none overflow-hidden rounded-md border ${
                       activeImage === index ? 'border-black' : 'border-slate-200'
                     }`}
-                    key={image.filename || image.url}
+                    key={image}
                     onClick={() => setActiveImage(index)}
                     type="button"
                   >
                     <img
-                      alt={`${room.name} ${index + 1}`}
+                      alt={`${room.roomNumber} ${index + 1}`}
                       className="h-full w-full object-cover"
-                      src={mediaUrl(image.url)}
+                      src={mediaUrl(image)}
                     />
                   </button>
                 ))}

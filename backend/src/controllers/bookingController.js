@@ -1,9 +1,46 @@
 import Booking from '../models/Booking.js';
+import Notification from '../models/Notification.js';
 import Room from '../models/Room.js';
 
 const daysBetween = (start, end) => {
   const diff = new Date(end).getTime() - new Date(start).getTime();
   return Math.max(Math.ceil(diff / (1000 * 60 * 60 * 24)), 1);
+};
+
+const roomStatusForBookingStatus = {
+  pending: 'booked',
+  'checked-in': 'occupied',
+  completed: 'available',
+  cancelled: 'available'
+};
+
+const updateRoomForBookingStatus = async (booking) => {
+  const roomStatus = roomStatusForBookingStatus[booking.status];
+  if (roomStatus) {
+    await Room.findByIdAndUpdate(booking.roomId, { status: roomStatus });
+  }
+};
+
+const createReviewNotification = async (booking) => {
+  const populatedBooking = await Booking.findById(booking._id).populate('roomId');
+  if (!populatedBooking) return;
+
+  const roomLabel = populatedBooking.roomId?.roomNumber || populatedBooking.roomId?.name || 'your room';
+
+  await Notification.findOneAndUpdate(
+    {
+      bookingId: populatedBooking._id,
+      type: 'review_request'
+    },
+    {
+      userId: populatedBooking.userId,
+      bookingId: populatedBooking._id,
+      type: 'review_request',
+      isRead: false,
+      message: `Cảm ơn bạn đã ở tại Anh Đào, hãy để lại đánh giá cho phòng ${roomLabel}.`
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
 };
 
 export const createBooking = async (req, res, next) => {
@@ -32,6 +69,8 @@ export const createBooking = async (req, res, next) => {
       totalPrice,
       status: 'pending'
     });
+
+    await Room.findByIdAndUpdate(roomId, { status: 'booked' });
 
     const populated = await booking.populate('roomId');
     res.status(201).json({ booking: populated });
@@ -74,17 +113,24 @@ export const updateBookingStatus = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid booking status' });
     }
 
-    const booking = await Booking.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true, runValidators: true }
-    )
+    const currentBooking = await Booking.findById(req.params.id);
+    if (!currentBooking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    const wasCompleted = currentBooking.status === 'completed';
+    currentBooking.status = status;
+    await currentBooking.save();
+    await updateRoomForBookingStatus(currentBooking);
+
+    if (status === 'completed' && !wasCompleted) {
+      await createReviewNotification(currentBooking);
+    }
+
+    const booking = await Booking.findById(req.params.id)
       .populate('userId', 'nickname email phone')
       .populate('roomId');
 
-    if (!booking) {
-      return res.status(404).json({ message: 'Booking not found' });
-    }
 
     res.json({ booking });
   } catch (error) {
