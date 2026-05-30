@@ -22,6 +22,7 @@ const seedAdmin = async () => {
       nickname: process.env.ADMIN_NICKNAME || 'Admin',
       email,
       phone: process.env.ADMIN_PHONE || '0900000000',
+      gender: 'male',
       password: hashedPassword,
       role: 'admin'
     },
@@ -37,4 +38,3 @@ seedAdmin().catch(async (error) => {
   await mongoose.disconnect();
   process.exit(1);
 });
-

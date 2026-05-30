@@ -1,23 +1,37 @@
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const avatarsUploadRoot = path.resolve(__dirname, '../../uploads/avatars');
 
 const signToken = (userId) =>
   jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d'
   });
 
+const deleteAvatarFile = async (avatar) => {
+  if (!avatar || !avatar.startsWith('/uploads/avatars/')) return;
+
+  await fs.unlink(path.join(avatarsUploadRoot, path.basename(avatar))).catch(() => {});
+};
+
 const publicUser = (user) => ({
   id: user._id,
   nickname: user.nickname,
   email: user.email,
   phone: user.phone,
+  gender: user.gender,
+  avatar: user.avatar,
   role: user.role
 });
 
 export const register = async (req, res, next) => {
   try {
-    const { nickname, email, phone, password } = req.body;
+    const { nickname, email, phone, password, gender = 'male' } = req.body;
 
     if (!nickname || !email || !phone || !password) {
       return res.status(400).json({ message: 'Nickname, email, phone and password are required' });
@@ -33,6 +47,7 @@ export const register = async (req, res, next) => {
       nickname,
       email,
       phone,
+      gender: ['male', 'female'].includes(gender) ? gender : 'male',
       password: hashedPassword
     });
 
@@ -76,3 +91,19 @@ export const getMe = async (req, res) => {
   res.json({ user: publicUser(req.user) });
 };
 
+export const updateAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Avatar image is required' });
+    }
+
+    const previousAvatar = req.user.avatar;
+    req.user.avatar = `/uploads/avatars/${req.file.filename}`;
+    await req.user.save();
+    await deleteAvatarFile(previousAvatar);
+
+    res.json({ user: publicUser(req.user) });
+  } catch (error) {
+    next(error);
+  }
+};

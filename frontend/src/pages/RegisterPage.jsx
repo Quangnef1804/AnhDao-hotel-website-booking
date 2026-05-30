@@ -7,7 +7,7 @@ const RegisterPage = () => {
   const { t } = useTranslation();
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ nickname: '', email: '', phone: '', password: '' });
+  const [form, setForm] = useState({ nickname: '', email: '', phone: '', gender: 'male', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -71,6 +71,25 @@ const RegisterPage = () => {
               />
             </label>
             <label className="block space-y-2 text-sm font-medium text-slate-700 sm:col-span-2">
+              {t('auth.gender')}
+              <div className="grid grid-cols-2 gap-2">
+                {['male', 'female'].map((gender) => (
+                  <button
+                    className={`rounded-md border px-4 py-2 text-sm font-semibold transition ${
+                      form.gender === gender
+                        ? 'border-sky-300 bg-anhdao-blue text-slate-950'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                    key={gender}
+                    onClick={() => setForm((current) => ({ ...current, gender }))}
+                    type="button"
+                  >
+                    {t(`auth.${gender}`)}
+                  </button>
+                ))}
+              </div>
+            </label>
+            <label className="block space-y-2 text-sm font-medium text-slate-700 sm:col-span-2">
               {t('auth.password')}
               <input
                 className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-sky-400"
@@ -100,4 +119,3 @@ const RegisterPage = () => {
 };
 
 export default RegisterPage;
-

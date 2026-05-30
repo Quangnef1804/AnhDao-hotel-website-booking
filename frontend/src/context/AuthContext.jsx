@@ -45,13 +45,19 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const updateUser = (nextUser) => {
+    localStorage.setItem('anhdao_user', JSON.stringify(nextUser));
+    setUser(nextUser);
+  };
+
   const value = useMemo(
     () => ({
       user,
       isAdmin: user?.role === 'admin',
       login,
       register,
-      logout
+      logout,
+      updateUser
     }),
     [user]
   );

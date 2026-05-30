@@ -4,11 +4,13 @@ import { fileURLToPath } from 'url';
 import multer from 'multer';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadRoot = path.resolve(__dirname, '../../uploads/rooms');
+const roomsUploadRoot = path.resolve(__dirname, '../../uploads/rooms');
+const avatarsUploadRoot = path.resolve(__dirname, '../../uploads/avatars');
 
-fs.mkdirSync(uploadRoot, { recursive: true });
+fs.mkdirSync(roomsUploadRoot, { recursive: true });
+fs.mkdirSync(avatarsUploadRoot, { recursive: true });
 
-const storage = multer.diskStorage({
+const createStorage = (uploadRoot, fallbackName) => multer.diskStorage({
   destination: (_req, _file, callback) => {
     callback(null, uploadRoot);
   },
@@ -21,7 +23,7 @@ const storage = multer.diskStorage({
       .replace(/(^-|-$)/g, '')
       .slice(0, 40);
 
-    callback(null, `${Date.now()}-${safeName || 'room'}${ext}`);
+    callback(null, `${Date.now()}-${safeName || fallbackName}${ext}`);
   }
 });
 
@@ -37,10 +39,19 @@ const fileFilter = (_req, file, callback) => {
 };
 
 export const uploadRoomImages = multer({
-  storage,
+  storage: createStorage(roomsUploadRoot, 'room'),
   fileFilter,
   limits: {
     files: 6,
     fileSize: 5 * 1024 * 1024
   }
 }).array('images', 6);
+
+export const uploadAvatar = multer({
+  storage: createStorage(avatarsUploadRoot, 'avatar'),
+  fileFilter,
+  limits: {
+    files: 1,
+    fileSize: 3 * 1024 * 1024
+  }
+}).single('avatar');

@@ -15,7 +15,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY --from=deps /app/node_modules ./node_modules
 COPY package*.json ./
 COPY src ./src
-RUN mkdir -p uploads/rooms && chown -R appuser:appgroup /app/uploads
+RUN mkdir -p uploads/rooms uploads/avatars && chown -R appuser:appgroup /app/uploads
 
 USER appuser
 
