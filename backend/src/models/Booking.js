@@ -29,6 +29,10 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       enum: ['pending', 'checked-in', 'completed', 'cancelled'],
       default: 'pending'
+    },
+    inventoryDeducted: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true }
@@ -37,4 +41,3 @@ const bookingSchema = new mongoose.Schema(
 const Booking = mongoose.model('Booking', bookingSchema);
 
 export default Booking;
-

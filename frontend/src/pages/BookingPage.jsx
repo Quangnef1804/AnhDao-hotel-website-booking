@@ -28,9 +28,10 @@ const BookingPage = () => {
     loadRooms();
   }, []);
 
-  const handleBooked = () => {
+  const handleBooked = async () => {
     setSelectedRoom(null);
     setMessage(t('booking.success'));
+    await loadRooms();
   };
 
   return (
@@ -47,13 +48,13 @@ const BookingPage = () => {
         {error && <p className="mb-5 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
 
         {loading ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-5">
             {[1, 2, 3].map((item) => (
-              <div className="h-80 animate-pulse rounded-lg bg-white" key={item} />
+              <div className="h-72 animate-pulse rounded-2xl bg-white" key={item} />
             ))}
           </div>
         ) : rooms.length ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-5">
             {rooms.map((room) => (
               <RoomCard key={room._id} room={room} onDetail={setSelectedRoom} />
             ))}
@@ -69,4 +70,3 @@ const BookingPage = () => {
 };
 
 export default BookingPage;
-

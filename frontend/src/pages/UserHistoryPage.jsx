@@ -71,7 +71,9 @@ const UserHistoryPage = () => {
               <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" key={booking._id}>
                 <div className="flex flex-col justify-between gap-4 sm:flex-row">
                   <div>
-                    <h2 className="text-lg font-semibold text-black">{booking.roomId?.roomNumber}</h2>
+                    <h2 className="text-lg font-semibold text-black">
+                      {booking.roomId?.name || booking.roomId?.roomNumber}
+                    </h2>
                     <p className="mt-2 text-sm text-slate-600">
                       {formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)}
                     </p>

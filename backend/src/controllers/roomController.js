@@ -28,15 +28,16 @@ const deleteRoomImageFiles = async (rooms) => {
 const roomPayload = (body, files = []) => {
   const payload = {};
 
-  const roomNumber = body.roomNumber || body.name;
-  if (roomNumber !== undefined) {
-    payload.roomNumber = roomNumber;
-    payload.name = roomNumber;
+  const roomName = body.name || body.roomNumber;
+  if (roomName !== undefined) {
+    payload.name = roomName;
+    payload.roomNumber = roomName;
   }
   if (body.type !== undefined) payload.type = body.type;
   if (body.description !== undefined) payload.description = body.description;
   if (body.status !== undefined) payload.status = body.status;
   if (body.price !== undefined) payload.price = Number(body.price);
+  if (body.quantity !== undefined) payload.quantity = Number(body.quantity);
   if (files.length) payload.images = roomImagesFromFiles(files);
 
   return payload;
@@ -61,8 +62,9 @@ const attachReviewStats = async (rooms) => {
     const roomStats = statsByRoom.get(String(room._id));
     return {
       ...room,
-      roomNumber: room.roomNumber || room.name,
-      name: room.roomNumber || room.name,
+      roomNumber: room.name || room.roomNumber,
+      name: room.name || room.roomNumber,
+      quantity: Number(room.quantity || 0),
       averageRating: roomStats ? Number(roomStats.averageRating.toFixed(1)) : 0,
       reviewCount: roomStats?.reviewCount || 0
     };
@@ -75,7 +77,7 @@ export const getRooms = async (req, res, next) => {
     if (req.query.status) filter.status = req.query.status;
     if (req.query.type) filter.type = req.query.type;
 
-    const rooms = await Room.find(filter).sort({ roomNumber: 1, createdAt: -1 });
+    const rooms = await Room.find(filter).sort({ name: 1, roomNumber: 1, createdAt: -1 });
     res.json({ rooms: await attachReviewStats(rooms) });
   } catch (error) {
     next(error);

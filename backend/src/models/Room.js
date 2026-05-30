@@ -4,17 +4,23 @@ const roomSchema = new mongoose.Schema(
   {
     roomNumber: {
       type: String,
-      required: true,
       trim: true
     },
     name: {
       type: String,
+      required: true,
       trim: true
     },
     type: {
       type: String,
-      enum: ['single', 'double', 'vip'],
-      required: true
+      enum: ['single', 'double', 'family', 'vip'],
+      default: 'single'
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0
     },
     price: {
       type: Number,
